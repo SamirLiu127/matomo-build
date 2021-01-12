@@ -1,0 +1,48 @@
+version: '3.5'
+
+services:
+  mariadb:
+    image: mariadb:10.5
+    container_name: db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: '${DB_ROOT_PW}'
+      MYSQL_DATABASE: '${DB_NAME}'
+      MYSQL_USER: '${DB_USER}'
+      MYSQL_PASSWORD: '${DB_PW}'
+      TZ: Asia/Taipei
+    ports:
+      - 3306:3306
+    volumes:
+      - $PWD/var/lib/mariadb:/var/lib/mysql
+
+  matomo:
+    image: matomo:4.1.0
+    container_name: web
+    restart: always
+    environment:
+      MATOMO_DATABASE_HOST: mariadb
+      MATOMO_DATABASE_DBNAME: '${DB_NAME}'
+      MATOMO_DATABASE_USERNAME: '${DB_USER}'
+      MATOMO_DATABASE_PASSWORD: '${DB_PW}'
+      TZ: Asia/Taipei
+    depends_on:
+      - mariadb
+    links:
+      - mariadb
+    ports:
+      - 8080:80
+    volumes:
+      - $PWD/var/www/matomo:/var/www/html
+
+  nginx:
+    image: nginx:1.19
+    container_name: nginx
+    restart: always
+    depends_on:
+      - matomo
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - $PWD/etc/nginx/conf.d/:/etc/nginx/conf.d
